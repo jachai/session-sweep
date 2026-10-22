@@ -1,0 +1,15 @@
+{
+  "name": "session-sweep",
+  "description": "session-sweep: keep the claude agents view down to the sessions that still matter",
+  "owner": {
+    "name": "Jonathan Achai",
+    "url": "https://github.com/jachai"
+  },
+  "plugins": [
+    {
+      "name": "session-sweep",
+      "source": "./",
+      "description": "Close stale Claude Code background sessions on demand and hourly, and ask you about the unclear ones"
+    }
+  ]
+}

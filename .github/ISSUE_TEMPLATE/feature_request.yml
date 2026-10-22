@@ -1,0 +1,15 @@
+name: Feature request
+description: A rule, setting or command you'd like
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: Describe the sessions that pile up, or the decision you'd like made for you.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help?

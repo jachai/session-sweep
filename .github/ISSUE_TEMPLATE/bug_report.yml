@@ -1,0 +1,39 @@
+name: Bug report
+description: A session was judged wrongly, or something else broke
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Please don't paste real session names, prompts, paths or transcripts. Redact them first.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+      description: For a wrong verdict, say which rule you think should have applied.
+    validations:
+      required: true
+  - type: input
+    id: claude-version
+    attributes:
+      label: "`claude --version`"
+    validations:
+      required: true
+  - type: input
+    id: sweep-version
+    attributes:
+      label: "`session-sweep --version`"
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: OS and how you installed it
+      placeholder: macOS 26.1, plugin / Ubuntu 26.04, install.sh
+    validations:
+      required: true
+  - type: textarea
+    id: scan
+    attributes:
+      label: "`session-sweep scan --all` output (redacted)"
+      description: Replace session names and reasons with placeholders.
+      render: text

@@ -1,0 +1,13 @@
+{
+  "name": "session-sweep",
+  "version": "0.1.0",
+  "description": "Close the Claude Code background sessions you no longer need: ones that handed off to a newer session, finished ones, and (after asking you) abandoned ones. Runs on demand and hourly.",
+  "author": {
+    "name": "Jonathan Achai",
+    "url": "https://github.com/jachai"
+  },
+  "homepage": "https://github.com/jachai/session-sweep",
+  "repository": "https://github.com/jachai/session-sweep",
+  "license": "MIT",
+  "keywords": ["sessions", "background-agents", "cleanup", "agents-view", "handoff"]
+}
