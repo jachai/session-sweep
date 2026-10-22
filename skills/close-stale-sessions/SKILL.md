@@ -9,10 +9,10 @@ All the work is done by `scripts/session_sweep.py` in this skill's base director
 skill loads). Below, `sweep` means `python3 <base directory>/scripts/session_sweep.py`. It uses only
 the Python standard library and never sends anything off the machine.
 
-## Step 0: the hourly job (every time)
+## Step 0: the scheduled job (every time)
 
 Run `sweep schedule ensure`. On the first run it installs a job (launchd on macOS, a systemd user
-timer or cron on Linux) that runs `run --apply --spawn-interview` every hour, and prints a line
+timer or cron on Linux) that runs `run --apply --spawn-interview` every 12 hours (`interval_minutes` in config.json), and prints a line
 saying so. Tell the user that line in your reply, including how to remove it
 (`sweep schedule uninstall`). If they uninstalled it before, `ensure` leaves it off.
 
@@ -25,9 +25,9 @@ saying so. Tell the user that line in your reply, including how to remove it
 3. `sweep run --apply`, then report what closed and anything `claude rm` refused.
 
 If a permission check denies `run --apply`, don't retry it or look for another way around. Tell the
-user to type `! <the same command>`, or that the hourly job will apply the recorded answers.
+user to type `! <the same command>`, or that the scheduled job will apply the recorded answers.
 
-## Interview mode (started by the hourly job)
+## Interview mode (started by the scheduled job)
 
 The job has already closed the CLOSE rows. Run `sweep scan --json` and take the rows whose
 `verdict` is `ask`. Show them as one numbered list, suggested-close first:

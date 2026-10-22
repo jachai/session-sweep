@@ -300,6 +300,12 @@ class Schedule(Env):
         self.assertTrue(cs.cron_line(cfg).startswith("17 */1 * * * "))
         self.assertTrue(cs.cron_line(cs.DEFAULTS).endswith("# session-sweep"))
 
+    def test_default_is_every_twelve_hours(self):
+        self.assertEqual(cs.launchd_plist(cs.DEFAULTS)["StartInterval"], 12 * 3600)
+        self.assertIn("OnUnitActiveSec=720min", cs.systemd_units(cs.DEFAULTS)[1])
+        self.assertTrue(cs.cron_line(cs.DEFAULTS).startswith("17 */12 * * * "))
+        self.assertEqual([cs.every(m) for m in (720, 60, 90)], ["every 12 hours", "every hour", "every 90 minutes"])
+
 
 class Cli(Env):
     def test_scan_on_an_empty_config_dir(self):

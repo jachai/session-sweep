@@ -10,7 +10,7 @@ sessions are stale, and closes them with `claude rm` after archiving their files
   session-sweep decide close|keep ID...     record your answer for ASK rows
   session-sweep restore ID                  bring back a closed session's transcript
   session-sweep schedule ensure|install|uninstall|status
-                                           the hourly job (launchd, systemd or cron)
+                                           the scheduled job (launchd, systemd or cron)
   session-sweep status                      schedule, last run and counts
 
 See https://github.com/jachai/session-sweep for how it decides.
@@ -38,7 +38,7 @@ DEFAULTS = {
     "done_idle_hours": 24,     # completed + exited + no worktree + idle this long -> close
     "abandoned_days": 7,       # ASK rows idle this long are suggested for closing
     "archive_days": 30,        # how long closed sessions stay restorable
-    "interval_minutes": 60,    # how often the scheduled job runs
+    "interval_minutes": 720,   # how often the scheduled job runs (12 hours)
     "interview": True,         # let the scheduled job start an interview session
     "interview_model": "sonnet",
 }
@@ -130,6 +130,13 @@ def ts(s):
         return dt.datetime.fromisoformat(s.replace("Z", "+00:00")).timestamp()
     except ValueError:
         return 0.0
+
+
+def every(minutes):
+    minutes = int(minutes)
+    if minutes % 60:
+        return "every %d minutes" % minutes
+    return "every hour" if minutes == 60 else "every %d hours" % (minutes // 60)
 
 
 def ago(h):
@@ -357,7 +364,7 @@ def prune_archive(days):
 
 
 class RunLock:
-    """One run at a time: the hourly job and an on-demand run must not both `claude rm`."""
+    """One run at a time: the scheduled job and an on-demand run must not both `claude rm`."""
 
     def __enter__(self):
         import fcntl
@@ -393,7 +400,7 @@ def spawn_interview(rows, cfg):
     return name if rc == 0 else None
 
 
-# ---------------------------------------------------------------- the hourly job
+# ---------------------------------------------------------------- the scheduled job
 
 def stable_script():
     return data_dir() / "session_sweep.py"
@@ -457,8 +464,8 @@ def systemd_units(cfg):
         env += '\nEnvironment="CLAUDE_CONFIG_DIR=%s"' % os.environ["CLAUDE_CONFIG_DIR"]
     service = ("[Unit]\nDescription=session-sweep: close stale Claude Code sessions\n\n[Service]\nType=oneshot\n"
                "%s\nExecStart=%s\n" % (env, " ".join('"%s"' % a for a in job_command())))
-    timer = ("[Unit]\nDescription=Run session-sweep every %d minutes\n\n[Timer]\nOnBootSec=15min\n"
-             "OnUnitActiveSec=%dmin\n\n[Install]\nWantedBy=timers.target\n") % ((int(cfg["interval_minutes"]),) * 2)
+    timer = ("[Unit]\nDescription=Run session-sweep %s\n\n[Timer]\nOnBootSec=15min\n"
+             "OnUnitActiveSec=%dmin\n\n[Install]\nWantedBy=timers.target\n") % (every(cfg["interval_minutes"]), int(cfg["interval_minutes"]))
     return service, timer
 
 
@@ -623,19 +630,19 @@ def cmd_restore(a):
 
 def cmd_schedule(a):
     if a.action == "install":
-        print("installed the %s job: every %s minutes" % (schedule_install(), config()["interval_minutes"]))
+        print("installed the %s job: %s" % (schedule_install(), every(config()["interval_minutes"])))
     elif a.action == "uninstall":
         print("removed the %s job (it won't be reinstalled automatically)" % schedule_uninstall())
     elif a.action == "ensure":
         state = schedule_ensure()
         if state.startswith("newly-installed"):
-            print("first run: installed the %s job; it runs `session-sweep run --apply --spawn-interview` every %s "
-                  "minutes. Remove it with `session-sweep schedule uninstall`."
-                  % (state.split(":")[1], config()["interval_minutes"]))
+            print("first run: installed the %s job; it runs `session-sweep run --apply --spawn-interview` %s. "
+                  "Remove it with `session-sweep schedule uninstall`."
+                  % (state.split(":")[1], every(config()["interval_minutes"])))
         elif state == "declined":
-            print("the hourly job was uninstalled earlier; `session-sweep schedule install` brings it back")
+            print("the scheduled job was uninstalled earlier; `session-sweep schedule install` brings it back")
         else:
-            print("the hourly job is installed")
+            print("the scheduled job is installed")
     else:
         print(json.dumps(load_json(data_dir() / "schedule.json", {"state": "never"}), indent=1))
 
@@ -671,7 +678,7 @@ def main(argv=None):
     s = sub.add_parser("restore", help="bring back a closed session's transcript and print the resume command")
     s.add_argument("id")
     s.set_defaults(fn=cmd_restore)
-    s = sub.add_parser("schedule", help="the hourly job")
+    s = sub.add_parser("schedule", help="the scheduled job")
     s.add_argument("action", choices=["ensure", "install", "uninstall", "status"])
     s.set_defaults(fn=cmd_schedule)
     sub.add_parser("status", help="schedule, last run and counts").set_defaults(fn=cmd_status)

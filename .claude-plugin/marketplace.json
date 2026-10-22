@@ -9,7 +9,7 @@
     {
       "name": "session-sweep",
       "source": "./",
-      "description": "Close stale Claude Code background sessions on demand and hourly, and ask you about the unclear ones"
+      "description": "Close stale Claude Code background sessions on demand and every 12 hours, and ask you about the unclear ones"
     }
   ]
 }

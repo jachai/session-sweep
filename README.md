@@ -5,7 +5,7 @@ Keep the `claude agents` view down to the Claude Code sessions that still matter
 [![test](https://github.com/jachai/session-sweep/actions/workflows/test.yml/badge.svg)](https://github.com/jachai/session-sweep/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](https://github.com/jachai/session-sweep/blob/main/LICENSE)
 
-If you work in long chains of sessions (each one writes a handoff, a fresh session picks it up), the old ones pile up as "needs input", "ready for review" or "completed". session-sweep runs every hour, closes what's clearly done, and starts one short interview session when something needs your call.
+If you work in long chains of sessions (each one writes a handoff, a fresh session picks it up), the old ones pile up as "needs input", "ready for review" or "completed". session-sweep runs every 12 hours, closes what's clearly done, and starts one short interview session when something needs your call.
 
 ```
 $ session-sweep scan --all
@@ -45,7 +45,7 @@ You need Claude Code with background sessions (`claude agents`) and Python 3.9+ 
 
 Ask Claude to "close stale sessions" or "clean up the agents view", or run the skill directly: `/session-sweep:close-stale-sessions` (plugin) or `/close-stale-sessions` (plain skill). Claude shows what it will close, asks you about the unclear ones, and closes them.
 
-**The first run installs the hourly job** and tells you it did. The job runs launchd on macOS, and a systemd user timer (or cron, if there's no systemd) on Linux. Each hour it:
+**The first run installs a job that runs every 12 hours** and tells you it did. The job runs launchd on macOS, and a systemd user timer (or cron, if there's no systemd) on Linux. Each run it:
 
 1. closes every CLOSE row;
 2. if there are ASK rows it hasn't asked you about yet, starts one background session named **session-sweep interview (N to review)**. It shows up in `claude agents` as needing your input. Attach to it and answer with something like `close all suggested`, `close 1 3`, `keep 2` or `later`. Your answers are remembered.
@@ -108,18 +108,18 @@ Before `claude rm <id>`, session-sweep copies the session's `state.json` and `ti
   "done_idle_hours": 24,
   "abandoned_days": 7,
   "archive_days": 30,
-  "interval_minutes": 60,
+  "interval_minutes": 720,
   "interview": true,
   "interview_model": "sonnet"
 }
 ```
 
-Change `interval_minutes` and then run `session-sweep schedule install` to apply it. `CLAUDE_CONFIG_DIR` is respected everywhere. The job's log is `~/.claude/session-sweep/job.log`, and every close, refusal and answer is recorded in `log.jsonl`.
+`interval_minutes` is how often the job runs (720 = every 12 hours; 60 for hourly). Change it and then run `session-sweep schedule install` to apply it. `CLAUDE_CONFIG_DIR` is respected everywhere. The job's log is `~/.claude/session-sweep/job.log`, and every close, refusal and answer is recorded in `log.jsonl`.
 
 ## Notes
 
 - Session states and pids come from `claude agents --json --all`, the same source as the built-in view. Names, prompts and last messages come from Claude Code's local files (`~/.claude/jobs`), which aren't a public API. A Claude Code update can change them; please [open an issue](https://github.com/jachai/session-sweep/issues/new/choose) if something stops matching.
-- Claude Code's auto mode may refuse to let a session run `claude rm` for you. If it does, the skill tells you to run the command yourself with `!`; the hourly job runs outside Claude Code and isn't affected.
+- Claude Code's auto mode may refuse to let a session run `claude rm` for you. If it does, the skill tells you to run the command yourself with `!`; the scheduled job runs outside Claude Code and isn't affected.
 - Nothing leaves your machine. session-sweep writes only to `~/.claude/session-sweep/`, the job definition (`~/Library/LaunchAgents/io.github.jachai.session-sweep.plist`, `~/.config/systemd/user/session-sweep.*` or one tagged crontab line) and the `~/.local/bin/session-sweep` link.
 - Works well with [claude-top](https://github.com/jachai/claude-top), a live view of your sessions and plan usage.
 - This is an independent project, not affiliated with Anthropic.
