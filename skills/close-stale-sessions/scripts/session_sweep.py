@@ -27,7 +27,7 @@ import sys
 import time
 from pathlib import Path
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 LABEL = "io.github.jachai.session-sweep"
 INTERVIEW_NAME = "session-sweep interview"
@@ -279,7 +279,12 @@ def classify(sessions, decisions, cfg=None):
         elif s["kind"] != "background":
             reason = "interactive terminal session"
         elif state == "working" and not s["pid"] and idle >= cfg["done_idle_hours"]:
-            verdict, reason = "ask", "marked working but its process is gone, idle %s" % ago(idle)
+            if d.get("decision") == "close":
+                verdict, reason = "close", "you said close"
+            elif d.get("decision") == "keep" and unchanged:
+                reason = "you said keep"
+            else:
+                verdict, reason = "ask", "marked working but its process is gone, idle %s" % ago(idle)
         elif state == "working" or busy_tasks(s):
             reason = "working"
         elif s["name"].startswith(INTERVIEW_NAME):

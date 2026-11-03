@@ -196,6 +196,13 @@ class Verdicts(Env):
         self.session("work0002", state="working", idle_h=30)
         self.assertEqual(self.rows()["work0002"]["verdict"], "ask")
 
+    def test_decision_on_a_working_row_without_a_process_is_honoured(self):
+        self.session("work0003", state="working", idle_h=30)
+        last = cs.load_sessions({})[0]["last_act"]
+        self.assertEqual(self.rows({"work0003": {"decision": "close"}})["work0003"]["verdict"], "close")
+        self.assertEqual(self.rows({"work0003": {"decision": "keep", "last_act": last}})["work0003"]["verdict"], "keep")
+        self.assertEqual(self.rows({"work0003": {"decision": "keep", "last_act": last - 600}})["work0003"]["verdict"], "ask")
+
     def test_leftover_in_flight_on_an_exited_session_is_ignored(self):
         self.session("left0001", idle_h=30, in_flight={"tasks": 1, "kinds": ["local_bash"]})
         self.session("watch001", idle_h=30, pid=7, in_flight={"tasks": 1, "kinds": ["artifact_watch"]})

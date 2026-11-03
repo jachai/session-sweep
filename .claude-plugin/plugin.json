@@ -1,6 +1,6 @@
 {
   "name": "session-sweep",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Close the Claude Code background sessions you no longer need: ones that handed off to a newer session, finished ones, and (after asking you) abandoned ones. Runs on demand and every 12 hours.",
   "author": {
     "name": "Jonathan Achai",

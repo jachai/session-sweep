@@ -5,6 +5,12 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-03
+
+### Fixed
+
+- A session marked working whose process is gone now honours a recorded `decide close` / `decide keep` instead of always asking, so `run --apply` closes it.
+
 ## [0.1.0] - 2026-10-22
 
 ### Added
