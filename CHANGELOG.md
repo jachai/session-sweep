@@ -5,6 +5,12 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-11-09
+
+### Fixed
+
+- Closing a session no longer loses its `tmp/` folder: it is copied to `archive/<id>/tmp/` first (files over 50 MB and symlinks skipped and listed in the manifest), `restore` prints where it is, and the 30-day pruning covers it.
+
 ## [0.1.1] - 2026-11-03
 
 ### Fixed

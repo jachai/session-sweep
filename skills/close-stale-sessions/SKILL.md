@@ -63,5 +63,10 @@ answer for unless they said `close all`.
 
 Closing archives `state.json`, `timeline.jsonl` and a hard link of the transcript to
 `~/.claude/session-sweep/archive/<id>/` (kept 30 days), then runs `claude rm <id>`.
-`sweep restore <id>` brings the transcript back and prints the resume command. Thresholds live in
+`sweep restore <id>` brings the transcript back and prints the resume command.
+
+Closing also deletes the job's `tmp/` folder (`~/.claude/jobs/<id>/tmp/`). The archive now keeps a copy at
+`archive/<id>/tmp/` (files over 50 MB and symlinks are skipped and listed in `manifest.json`), pruned with the
+rest after 30 days. Before closing a session, check whether any handoff points at `jobs/<id>/tmp`; if it does,
+the handoff needs the copy's path instead. Thresholds live in
 `~/.claude/session-sweep/config.json` (see the README).

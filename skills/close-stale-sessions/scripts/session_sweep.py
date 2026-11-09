@@ -27,7 +27,7 @@ import sys
 import time
 from pathlib import Path
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 LABEL = "io.github.jachai.session-sweep"
 INTERVIEW_NAME = "session-sweep interview"
@@ -328,6 +328,33 @@ def classify(sessions, decisions, cfg=None):
 
 # ---------------------------------------------------------------- closing
 
+TMP_MAX_BYTES = 50 * 1024 * 1024
+
+
+def archive_tmp(sid, dest):
+    """Copy the job's tmp/ into dest/tmp/ (closing deletes it). Skips symlinks and files over 50 MB;
+    returns the skipped paths, relative to tmp/."""
+    src = jobs_dir() / sid / "tmp"
+    skipped = []
+    if not src.is_dir():
+        return skipped
+
+    def ignore(d, names):
+        out = []
+        for n in names:
+            p = Path(d) / n
+            if p.is_symlink():
+                out.append(n)
+                skipped.append(str(p.relative_to(src)) + " (symlink)")
+            elif p.is_file() and p.stat().st_size > TMP_MAX_BYTES:
+                out.append(n)
+                skipped.append(str(p.relative_to(src)) + " (over 50 MB)")
+        return out
+
+    shutil.copytree(src, dest / "tmp", ignore=ignore, symlinks=True, dirs_exist_ok=True)
+    return skipped
+
+
 def archive_and_rm(sess, reason, decisions):
     sid, st = sess["id"], sess["st"]
     dest = archive_dir() / sid
@@ -336,6 +363,7 @@ def archive_and_rm(sess, reason, decisions):
         src = jobs_dir() / sid / name
         if src.exists():
             shutil.copy2(src, dest / name)
+    tmp_skipped = archive_tmp(sid, dest)
     tp, kept = sess["transcript"], dest / "transcript.jsonl"
     if tp and os.path.exists(tp) and not kept.exists():
         try:
@@ -344,7 +372,7 @@ def archive_and_rm(sess, reason, decisions):
             shutil.copy2(tp, kept)
     save_json(dest / "manifest.json", dict(
         id=sid, name=sess["name"], sessionId=st.get("sessionId"), cwd=st.get("cwd"), transcript=tp,
-        worktree=sess["worktree"], reason=reason, closed_at=dt.datetime.now().isoformat(timespec="seconds")))
+        worktree=sess["worktree"], reason=reason, tmp_skipped=tmp_skipped, closed_at=dt.datetime.now().isoformat(timespec="seconds")))
     os.utime(dest)
     try:
         r = claude("rm", sid)
@@ -630,6 +658,10 @@ def cmd_restore(a):
         os.makedirs(os.path.dirname(m["transcript"]), exist_ok=True)
         os.link(kept, m["transcript"])
         print("transcript restored to %s" % m["transcript"])
+    if (adir / "tmp").is_dir():
+        print("job tmp/ files kept at %s" % (adir / "tmp"))
+    for name in m.get("tmp_skipped") or []:
+        print("  not archived: tmp/%s" % name)
     print("cd %s && claude --resume %s" % (m.get("cwd") or home(), m.get("sessionId")))
 
 

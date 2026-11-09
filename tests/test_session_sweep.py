@@ -248,6 +248,29 @@ class Closing(Env):
         self.assertEqual(os.stat(arch / "transcript.jsonl").st_ino, os.stat(transcript).st_ino)
         self.assertIn(["rm", "done0005"], self.calls())
 
+    def test_close_keeps_a_copy_of_job_tmp(self):
+        self.session("tmp00001", idle_h=30)
+        tmp = self.cfg / "jobs/tmp00001/tmp"
+        (tmp / "sub").mkdir(parents=True)
+        (tmp / "notes.txt").write_text("hello")
+        (tmp / "sub/deep.txt").write_text("deep")
+        (tmp / "link").symlink_to(tmp / "notes.txt")
+        (tmp / "big.bin").write_bytes(b"0" * 10)
+        real_max = cs.TMP_MAX_BYTES
+        cs.TMP_MAX_BYTES = 5
+        self.addCleanup(setattr, cs, "TMP_MAX_BYTES", real_max)
+        self.run_cli("run", "--apply")
+        self.assertFalse((self.cfg / "jobs/tmp00001").exists())
+        arch = self.cfg / "session-sweep/archive/tmp00001"
+        self.assertEqual((arch / "tmp/sub/deep.txt").read_text(), "deep")
+        self.assertEqual((arch / "tmp/notes.txt").read_text(), "hello")
+        self.assertFalse((arch / "tmp/link").exists() or (arch / "tmp/link").is_symlink())
+        self.assertFalse((arch / "tmp/big.bin").exists())
+        skipped = cs.load_json(arch / "manifest.json", {})["tmp_skipped"]
+        self.assertIn("link (symlink)", skipped)
+        self.assertIn("big.bin (over 50 MB)", skipped)
+        self.assertIn("job tmp/ files kept at %s" % (arch / "tmp"), self.run_cli("restore", "tmp00001"))
+
     def test_refused_rm_becomes_a_question(self):
         self.session("wt000002", idle_h=30)
         with mock.patch.dict(os.environ, {"FAKE_REFUSE": "wt000002"}):

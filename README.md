@@ -94,7 +94,7 @@ Everything else that's idle: waiting on your input, stopped, failed, completed b
 
 ## Closing is reversible
 
-Before `claude rm <id>`, session-sweep copies the session's `state.json` and `timeline.jsonl` to `~/.claude/session-sweep/archive/<id>/` and adds a hard link to its transcript (no extra disk space, and the transcript survives even if `rm` deletes the original). `session-sweep restore <id>` puts the transcript back and prints `cd <folder> && claude --resume <session id>`. Archives are kept for 30 days.
+Before `claude rm <id>`, session-sweep copies the session's `state.json` and `timeline.jsonl` to `~/.claude/session-sweep/archive/<id>/` copies the job's `tmp/` folder to `archive/<id>/tmp/` (files over 50 MB and symlinks are skipped and listed in `manifest.json`), and adds a hard link to its transcript (no extra disk space, and the transcript survives even if `rm` deletes the original). `session-sweep restore <id>` puts the transcript back and prints `cd <folder> && claude --resume <session id>`. Archives are kept for 30 days.
 
 `claude rm` deletes a session's worktree too. It refuses when the worktree has unpushed commits, and session-sweep never forces it; that session becomes an ASK row instead.
 
