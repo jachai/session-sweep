@@ -1,6 +1,6 @@
 ---
 name: close-stale-sessions
-description: Clear clutter from the `claude agents` view by closing background sessions that are no longer relevant — ones that handed off to a newer session that has started, completed ones that have sat idle, and (after asking the user) ones left waiting on input, stopped or abandoned. Use when asked to "close stale sessions", "clean up the agents view", "clear old sessions", "sweep sessions", or when a session-sweep interview session asks you to run it in interview mode.
+description: Close background sessions no longer relevant (handed off, completed and idle, and after asking, waiting/stopped/abandoned) to clear the `claude agents` view. Use for "close stale sessions", "clean up the agents view", "sweep sessions", or when a session-sweep interview session asks.
 ---
 
 # Close stale sessions
