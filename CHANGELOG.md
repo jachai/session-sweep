@@ -5,6 +5,12 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-11-15
+
+### Changed
+
+- In a Claude session the skill no longer runs `run --apply` or `schedule ensure` when the scheduled job is installed: it records `decide close`, stops sessions with `claude stop` (one per call) and leaves `claude rm` to the job, so permission checks stop blocking it.
+
 ## [0.1.2] - 2026-11-09
 
 ### Fixed

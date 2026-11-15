@@ -27,7 +27,7 @@ import sys
 import time
 from pathlib import Path
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
 LABEL = "io.github.jachai.session-sweep"
 INTERVIEW_NAME = "session-sweep interview"

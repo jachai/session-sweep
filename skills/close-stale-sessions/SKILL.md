@@ -11,10 +11,14 @@ the Python standard library and never sends anything off the machine.
 
 ## Step 0: the scheduled job (every time)
 
-Run `sweep schedule ensure`. On the first run it installs a job (launchd on macOS, a systemd user
-timer or cron on Linux) that runs `run --apply --spawn-interview` every 12 hours (`interval_minutes` in config.json), and prints a line
-saying so. Tell the user that line in your reply, including how to remove it
-(`sweep schedule uninstall`). If they uninstalled it before, `ensure` leaves it off.
+Run `sweep schedule status`. If it says `installed` or `declined`, go on: don't run `ensure`, it
+would only re-check, and a permission check may read it as installing a job.
+
+Only when it says `never`, run `sweep schedule ensure`. It installs a job (launchd on macOS, a
+systemd user timer or cron on Linux) that runs `run --apply --spawn-interview` every 12 hours
+(`interval_minutes` in config.json), and prints a line saying so. Tell the user that line in your
+reply, including how to remove it (`sweep schedule uninstall`). If a permission check denies it,
+give the user the command to type as `! <the same command>`, and carry on with Step 1.
 
 ## Step 1: on demand (the user asked you to clean up)
 
@@ -22,10 +26,18 @@ saying so. Tell the user that line in your reply, including how to remove it
    paste the whole table.
 2. If there are ASK rows, interview the user (format below) and record the answers with
    `sweep decide close ID...` and `sweep decide keep ID...`.
-3. `sweep run --apply`, then report what closed and anything `claude rm` refused.
+3. Close them. **When the scheduled job is installed, don't run `run --apply` from a Claude
+   session.** It deletes sessions with `claude rm`, which permission checks block, and the job
+   applies the recorded answers within 12 hours anyway. Instead:
+   - record `sweep decide close ID...` for every session to close (CLOSE rows close without it);
+   - to clear one off the agents view now, run `claude stop <id>` in a Bash call of its own, with
+     nothing else in the call (no loop, no `&&` to other commands). A stopped session keeps its
+     conversation and is undone with `claude attach <id>`;
+   - report what you recorded and stopped, and that the job deletes them by its next run.
 
-If a permission check denies `run --apply`, don't retry it or look for another way around. Tell the
-user to type `! <the same command>`, or that the scheduled job will apply the recorded answers.
+   Without the scheduled job, run `sweep run --apply` and report what closed and anything `claude rm`
+   refused. If a permission check denies it, don't retry it or look for another way around. Tell the
+   user to type `! <the same command>`.
 
 ## Interview mode (started by the scheduled job)
 
@@ -42,8 +54,9 @@ Quote a few words of `last_message` only where the why is unclear. End the turn 
 `needs input:` Reply `close all suggested`, `close 1 3 7`, `keep 2 5`, `close all`, or `later`.
 
 When the user replies, map the numbers to ids, run `decide close …` and `decide keep …` (leave
-unmentioned rows undecided), then `sweep run --apply` (same permission rule as above), and finish
-with one line saying how many closed and how many were kept. Never close a row the user didn't
+unmentioned rows undecided), then close them the way Step 1.3 says (the job is installed, since it
+started you, so record and `claude stop`, never `run --apply`), and finish with one line saying how
+many will close and how many were kept. Never close a row the user didn't
 answer for unless they said `close all`.
 
 ## How it decides
